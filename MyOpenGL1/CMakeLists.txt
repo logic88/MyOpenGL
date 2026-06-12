@@ -32,7 +32,7 @@ target_compile_definitions(MyOpenGL1 PRIVATE
     TEXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/textures"
 )
 
-set(GLFW_ROOT "G:/opengl/glfw-3.4.bin.WIN64" CACHE PATH "Path to the GLFW prebuilt package")
+set(GLFW_ROOT "G:/MyOpenGL/glfw-3.4.bin.WIN64" CACHE PATH "Path to the GLFW prebuilt package")
 
 add_library(glfw SHARED IMPORTED)
 set_target_properties(glfw PROPERTIES
