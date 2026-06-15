@@ -161,8 +161,28 @@ int main()
 	}
 	stbi_image_free(data);
 
+	unsigned int texture2;
+	glGenTextures(1, &texture2);
+	glBindTexture(GL_TEXTURE_2D, texture2);
+	const std::string texturePath2 = std::string(TEXTURE_DIR) + "/awesomeface.png";
+	stbi_set_flip_vertically_on_load(true);
+	unsigned char* data2 = stbi_load(texturePath2.c_str(), &width, &height, &nrChannels, 0);
+	if (data2)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data2);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cout << "Failed to load texture" << std::endl;
+		return -1;
+	}
+	stbi_image_free(data2);
+
+
 	ourShader.use();
-	ourShader.setInt("ourTexture", 0);
+	ourShader.setInt("texture1", 0);
+	ourShader.setInt("texture2", 1);
 
 
 
@@ -183,6 +203,8 @@ int main()
 		// bind Texture
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture2);
 
 
 		// draw our first triangle

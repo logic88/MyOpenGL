@@ -20,6 +20,7 @@ add_executable(MyOpenGL1
 
 target_include_directories(MyOpenGL1 PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "../glm-1.0.3/glm"
 )
 
 target_compile_options(MyOpenGL1 PRIVATE
