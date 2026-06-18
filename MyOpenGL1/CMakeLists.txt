@@ -6,13 +6,23 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+file(GLOB_RECURSE PROJECT_SOURCE_FILES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cxx"
+)
+
+file(GLOB_RECURSE PROJECT_HEADER_FILES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hh"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include/*.hxx"
+)
+
 add_executable(MyOpenGL1
-    src/main.cpp
-    src/glad.c
-    src/Shader.cpp
-    src/myStb.cpp
-    include/Shader.h
-    include/stb_image.h
+    ${PROJECT_SOURCE_FILES}
+    ${PROJECT_HEADER_FILES}
     shaders/vertex.glsl
     shaders/fragment.glsl
     textures/wall.jpg
@@ -33,13 +43,15 @@ target_compile_definitions(MyOpenGL1 PRIVATE
     TEXTURE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/textures"
 )
 
-set(GLFW_ROOT "G:/MyOpenGL/glfw-3.4.bin.WIN64" CACHE PATH "Path to the GLFW prebuilt package")
+set(GLFW_ROOT "../glfw-3.4.bin.WIN64")
+
+get_filename_component(GLFW_ROOT_ABS "${GLFW_ROOT}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
 
 add_library(glfw SHARED IMPORTED)
 set_target_properties(glfw PROPERTIES
-    IMPORTED_IMPLIB "${GLFW_ROOT}/lib-vc2022/glfw3dll.lib"
-    IMPORTED_LOCATION "${GLFW_ROOT}/lib-vc2022/glfw3.dll"
-    INTERFACE_INCLUDE_DIRECTORIES "${GLFW_ROOT}/include"
+    IMPORTED_IMPLIB "${GLFW_ROOT_ABS}/lib-vc2022/glfw3dll.lib"
+    IMPORTED_LOCATION "${GLFW_ROOT_ABS}/lib-vc2022/glfw3.dll"
+    INTERFACE_INCLUDE_DIRECTORIES "${GLFW_ROOT_ABS}/include"
 )
 
 target_link_libraries(MyOpenGL1 PRIVATE glfw opengl32)

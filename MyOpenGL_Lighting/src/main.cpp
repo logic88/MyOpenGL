@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include "Model.h"
 
 
 float deltaTime = 0.0f; // 当前帧与上一帧的时间差
@@ -86,6 +87,43 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
+unsigned int loadTexture(char const* path)
+{
+	unsigned int textureID;
+	glGenTextures(1, &textureID);
+
+	int width, height, nrComponents;
+	unsigned char* data = stbi_load(path, &width, &height, &nrComponents, 0);
+	if (data)
+	{
+		GLenum format;
+		if (nrComponents == 1)
+			format = GL_RED;
+		else if (nrComponents == 3)
+			format = GL_RGB;
+		else if (nrComponents == 4)
+			format = GL_RGBA;
+
+		glBindTexture(GL_TEXTURE_2D, textureID);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		stbi_image_free(data);
+	}
+	else
+	{
+		std::cout << "Texture failed to load at path: " << path << std::endl;
+		stbi_image_free(data);
+	}
+
+	return textureID;
+}
+
 int main()
 {
 
@@ -120,6 +158,9 @@ int main()
 		return -1;
 	}
 
+	// tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
+	stbi_set_flip_vertically_on_load(true);
+
 	glEnable(GL_DEPTH_TEST);
 	glViewport(0, 0, 800, 600);
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -131,92 +172,21 @@ int main()
 
 
 
-	const std::string lightShadervsPath = std::string(SHADER_DIR) + "/light.vs";
-	const std::string lightShaderfsPath = std::string(SHADER_DIR) + "/light.fs";
-	Shader lightShader(lightShadervsPath.c_str(), lightShaderfsPath.c_str());
+	const std::string lightCubeShadervsPath = std::string(SHADER_DIR) + "/lightCube.vs";
+	const std::string lightCubeShaderfsPath = std::string(SHADER_DIR) + "/lightCube.fs";
+	//Shader lightCubeShader(lightCubeShadervsPath.c_str(), lightCubeShaderfsPath.c_str());
 
-	const std::string CubeShadervsPath = std::string(SHADER_DIR) + "/cube.vs";
-	const std::string CubeShaderfsPath = std::string(SHADER_DIR) + "/cube.fs";
-	Shader cubeShader(CubeShadervsPath.c_str(), CubeShaderfsPath.c_str());
+	const std::string lightingShadervsPath = std::string(SHADER_DIR) + "/lighting.vs";
+	const std::string lightingShaderfsPath = std::string(SHADER_DIR) + "/lighting.fs";
+	//Shader lightingShader(lightingShadervsPath.c_str(), lightingShaderfsPath.c_str());
 
+	const std::string ourShadervsPath = std::string(SHADER_DIR) + "/model_loading.vs";
+	const std::string ourShaderfsPath = std::string(SHADER_DIR) + "/model_loading.fs";
+	Shader ourShader(ourShadervsPath.c_str(), ourShaderfsPath.c_str());
 
-	float vertices[] = {
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	const std::string ourModelPath = std::string(MODEL_DIR) + "/backpack/backpack.obj";
+	Model ourModel(ourModelPath.c_str());
 
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-
-		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-
-		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
-	};
-
-
-
-	unsigned int VBO, CubeVAO;
-	glGenVertexArrays(1, &CubeVAO);
-	glGenBuffers(1, &VBO);
-	//glGenBuffers(1, &EBO);
-
-	// 2. 把我们的顶点数组复制到一个顶点缓冲中，供OpenGL使用
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-
-	glBindVertexArray(CubeVAO);
-
-	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-
-	unsigned int lightVAO;
-	glGenVertexArrays(1, &lightVAO);
-	glBindVertexArray(lightVAO);
-	// 只需要绑定VBO不用再次设置VBO的数据，因为箱子的VBO数据中已经包含了正确的立方体顶点数据
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	// 设置灯立方体的顶点属性（对我们的灯来说仅仅只有位置数据）
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	// lighting
-	glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -231,57 +201,27 @@ int main()
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		cubeShader.use();
-		cubeShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
-		cubeShader.setVec3("lightColor", 1.0f, 0.5f, 0.31f);
-		cubeShader.setVec3("lightPos", lightPos);
-		cubeShader.setVec3("viewPos", camera.Position);
+		ourShader.use();
 
-		glm::vec3 lightColor;
-		lightColor.x = sin(glfwGetTime() * 2.0f);
-		lightColor.y = sin(glfwGetTime() * 0.7f);
-		lightColor.z = sin(glfwGetTime() * 1.3f);
-
-		glm::vec3 diffuseColor = lightColor * glm::vec3(0.5f); // decrease the influence
-		glm::vec3 ambientColor = diffuseColor * glm::vec3(0.2f); // low influence
-
-
-		cubeShader.setVec3("light.ambient", ambientColor);
-		cubeShader.setVec3("light.diffuse", diffuseColor);
-		cubeShader.setVec3("light.specular", 1.0f, 1.0f, 1.0f);
-
-		cubeShader.setVec3("material.ambient", 1.0f, 0.5f, 0.31f);
-		cubeShader.setVec3("material.diffuse", 1.0f, 0.5f, 0.31f);
-		cubeShader.setVec3("material.specular", 0.5f, 0.5f, 0.5f);
-		cubeShader.setFloat("material.shininess", 32.0f);
-
-		glm::mat4 projection = glm::mat4(1.0f);
-
-		projection = glm::perspective(glm::radians(camera.Zoom), 800.0f / 600.0f, 0.1f, 100.0f);
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), 800.0f / 600.0f, 0.1f, 100.0f);
 		glm::mat4 view = camera.GetViewMatrix();
 
-		cubeShader.setMat4("projection", projection);
-		cubeShader.setMat4("view", view);
+		ourShader.setMat4("projection", projection);
+		ourShader.setMat4("view", view);
+		ourShader.setVec3("viewPos", camera.Position);
+		ourShader.setFloat("material.shininess", 32.0f);
+		ourShader.setVec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+		ourShader.setVec3("dirLight.ambient", 0.15f, 0.15f, 0.15f);
+		ourShader.setVec3("dirLight.diffuse", 0.7f, 0.7f, 0.7f);
+		ourShader.setVec3("dirLight.specular", 0.4f, 0.4f, 0.4f);
 
+		// render the loaded model
 		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f)); // translate it down so it's at the center of the scene
+		model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	// it's a bit too big for our scene, so scale it down
+		ourShader.setMat4("model", model);
+		ourModel.Draw(ourShader);
 
-		cubeShader.setMat4("model", model);
-
-		glBindVertexArray(CubeVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		// also draw the lamp object
-		lightShader.use();
-		lightShader.setMat4("projection", projection);
-		lightShader.setMat4("view", view);
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, lightPos);
-		model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
-		lightShader.setMat4("model", model);
-		lightShader.setVec3("lightColor", lightColor);
-
-		glBindVertexArray(lightVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		// 渲染指令
 		
@@ -292,13 +232,7 @@ int main()
 		
 	}
 
-	// optional: de-allocate all resources once they've outlived their purpose:
-	// ------------------------------------------------------------------------
-	glDeleteVertexArrays(1, &CubeVAO);
-	glDeleteBuffers(1, &VBO);
-	//glDeleteBuffers(1, &EBO);
-	glDeleteProgram(lightShader.ID);
-	glDeleteProgram(cubeShader.ID);
+
 
 	glfwTerminate();
 	return 0;
